@@ -80,17 +80,21 @@ def extract_intron_seq_and_labels(df, max_model_input_size=0, truncate=True):
 
     Returns:
         ivs_seq_list: list of the intron sequences
-        labels: list of the BP pos, where each i'th entry is a binary string of all zeros except for a 1 at the BP
+        labels: list of the BP pos, where each i'th entry is a list of all zeros except for a 1 at the BP
     """
 
     # Select the relevant columns
     ivs_seq_list = df['IVS_SEQ'].tolist()
     bp_pos_within_strand_list = df['BP_POS_WITHIN_STRAND'].tolist()
 
-    # Create binary label for each IVS_SEQ
-    labels = [
-        ''.join(['1' if i == bp_pos else '0' for i in range(len(seq))])
-        for seq, bp_pos in zip(ivs_seq_list, bp_pos_within_strand_list)
+    #Create binary label for each IVS_SEQ
+    #labels = [
+    #    [].append([1 if i == bp_pos else 0 for i in range(len(seq))])
+    #    for seq, bp_pos in zip(ivs_seq_list, bp_pos_within_strand_list)
+    #]
+    
+    labels = [bp_pos*[0] + [1] + (len(seq)-bp_pos)*[0]
+              for seq, bp_pos in zip(ivs_seq_list, bp_pos_within_strand_list)
     ]
 
     if truncate:
