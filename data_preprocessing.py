@@ -113,7 +113,7 @@ def extract_intron_seq_and_labels(df, max_model_input_size=0, truncate=True):
     #    for seq, bp_pos in zip(ivs_seq_list, bp_pos_within_strand_list)
     #]
     
-    labels = [bp_pos*[0] + [1] + (len(seq)-bp_pos)*[0]
+    labels = [bp_pos*[0] + [1] + (len(seq)-bp_pos-1)*[0]
               for seq, bp_pos in zip(ivs_seq_list, bp_pos_within_strand_list)
     ]
 
