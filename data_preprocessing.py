@@ -1,41 +1,5 @@
 # Helper file to do some data preprocessing and preperation for training
 
-def preprocess_data(df):
-    """
-    Basic preprocessing of data. We remove "BP_POS" and "BP_ACC_SEQ" as there are
-    no longer accurate due to "flipping" the negative strands.
-
-    NOTE: The added column BP_POS_WITHIN_STRAND is ZERO-INDEXED
-
-    Args:
-        df: a dataframe of the data
-    """
-    # Replace all the strand entries with 0 (negative) or 1 (positive)
-    df['STRAND'] = df['STRAND'].replace({'+': 1, '-': 0})
-
-    # For negative strands, the BP is on the left (see "More Data Analysis..." in dataexploration.ipynb")
-
-    # Flip DNA sequences for rows where Strand is '0'
-    df['IVS_SEQ'] = df.apply(
-        lambda row: row['IVS_SEQ'][::-1] if row['STRAND'] == 0 else row['IVS_SEQ'],
-        axis=1
-    )
-
-    # Add a column for the BP position within the intron strand (IVS_SEQ), 0-indexed
-    # Note, the calculation is different depending on whether the strand is pos or neg
-    def compute_BP_pos_within_strand(row):
-        if row['STRAND'] == 1:
-            return row['BP_POS'] - row['START']
-        else:
-            return row['END'] - row['BP_POS']
-    
-    df['BP_POS_WITHIN_STRAND'] = df.apply(compute_BP_pos_within_strand, axis=1)
-
-    # Delete these columns as they are no longer accurate for negative strands
-    columns_to_delete = ['BP_POS', 'BP_ACC_SEQ']
-    df.drop(columns=columns_to_delete, inplace=True)
-
-
 def split_train_test_on_chr(df, train_chrs, val_chrs, test_chrs, shuffle=True):
 
     """
