@@ -1,6 +1,6 @@
 # Helper file to do some data preprocessing and preperation for training
 
-def split_train_test_on_chr(df, train_chrs, val_chrs, test_chrs, shuffle=True):
+def split_train_test_on_chr(df, train_chrs, val_chrs, test_chrs, shuffle=False, seed=None):
     """
     Creates a train/val/test split specified by the chromosome types.
     Note: Should run 'extract_intron_seq_and_labels on each dataframe after this method.
@@ -28,9 +28,9 @@ def split_train_test_on_chr(df, train_chrs, val_chrs, test_chrs, shuffle=True):
     test_df = df[df["CHR"].isin(test_chrs)]
 
     if shuffle:
-        train_df = train_df.sample(frac=1).reset_index(drop=True)
-        val_df = val_df.sample(frac=1).reset_index(drop=True)
-        test_df = test_df.sample(frac=1).reset_index(drop=True)
+        train_df = train_df.sample(frac=1, random_state=seed).reset_index(drop=True)
+        val_df = val_df.sample(frac=1, random_state=seed).reset_index(drop=True)
+        test_df = test_df.sample(frac=1, random_state=seed).reset_index(drop=True)
 
     # Output statistics on the dataset
     print("Chromosomes in train set:", set(train_df["CHR"]))
