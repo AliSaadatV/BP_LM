@@ -1,7 +1,6 @@
 # Helper file to do some data preprocessing and preperation for training
 
 def split_train_test_on_chr(df, train_chrs, val_chrs, test_chrs, shuffle=True):
-
     """
     Creates a train/val/test split specified by the chromosome types.
     Note: Should run 'extract_intron_seq_and_labels on each dataframe after this method.
@@ -71,12 +70,6 @@ def extract_intron_seq_and_labels(df, max_model_input_size=0, truncate=True):
     ivs_seq_list = df['IVS_SEQ'].tolist()
     bp_pos_within_strand_list = df['BP_POS_WITHIN_STRAND'].tolist()
 
-    #Create binary label for each IVS_SEQ
-    #labels = [
-    #    [].append([1 if i == bp_pos else 0 for i in range(len(seq))])
-    #    for seq, bp_pos in zip(ivs_seq_list, bp_pos_within_strand_list)
-    #]
-    
     labels = [bp_pos*[0] + [1] + (len(seq)-bp_pos-1)*[0]
               for seq, bp_pos in zip(ivs_seq_list, bp_pos_within_strand_list)
     ]
