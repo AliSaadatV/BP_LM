@@ -12,7 +12,7 @@ def create_dataset(df, tokenizer, model, max_model_input_size, seed, sample_n_da
     df = df[df['IVS_SIZE'] - df['BP_POS_WITHIN_STRAND'] <= max_model_input_size]
 
     # Split to train/val/test
-    train_df, test_df, val_df = split_train_test_on_chr(df, shuffle, seed)
+    train_df, val_df, test_df = split_train_test_on_chr(df, shuffle, seed)
 
     # Extract the sequences and labels that the model will train on
     train_seqs, train_labels = extract_intron_seq_and_labels(train_df, max_model_input_size, truncate=True)
@@ -20,9 +20,9 @@ def create_dataset(df, tokenizer, model, max_model_input_size, seed, sample_n_da
     val_seqs, val_labels = extract_intron_seq_and_labels(val_df, max_model_input_size, truncate=True)
 
     # Tokenize the sequences
-    train_ids = tokenizer(train_seqs, padding_side = 'left', padding = 'max_length')
-    test_ids = tokenizer(test_seqs, padding_side = 'left', padding = 'max_length')
-    val_ids = tokenizer(val_seqs, padding_side = 'left', padding = 'max_length')
+    train_ids = tokenizer(train_seqs, padding_side = 'left')
+    test_ids = tokenizer(test_seqs, padding_side = 'left')
+    val_ids = tokenizer(val_seqs, padding_side = 'left')
 
     # Build the dataset structure that will be passed for training
     train_dataset = Dataset.from_dict(train_ids)
