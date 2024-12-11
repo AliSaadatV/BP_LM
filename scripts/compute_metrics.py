@@ -6,7 +6,8 @@ from sklearn.metrics import (average_precision_score,
                              PrecisionRecallDisplay,
                              precision_recall_curve,
                              matthews_corrcoef,
-                             roc_auc_score)
+                             roc_auc_score,
+                             f1_score)
 from scipy.special import softmax
 
 
@@ -44,11 +45,11 @@ def compute_metrics(eval_pred, filename):
     fig, ax = plt.subplots(dpi = 300, figsize = (5,3))
     ax.set_ylabel("Precision")
     ax.set_xlabel("Recall")
-    ax.set_title("Precision-Recall Curve at final epoch: splicebert", fontsize = 12)
+    ax.set_title(f"Precision-Recall Curve: {filename}", fontsize = 12)
     ax.plot(recall, precision)
-    fig.savefig("Precision-Recall Curve at final epoch: splicebert.png")
+    #fig.savefig(f"Precision-Recall Curve at final epoch: {filename}.png")
 
-    np.savetxt(f'pr_curve_{filename}.txt', np.vstack((precision,recall)).T)
+    #np.savetxt(f'pr_curve_{filename}.txt', np.vstack((precision,recall)).T)
 
     #Compute ideal boundary and optimized F1
     ideal_threshold = thresholds[np.nanargmax(2 * (precision * recall) / (precision + recall))]
@@ -68,8 +69,8 @@ def compute_metrics(eval_pred, filename):
     dictionary = {"F1" : F1} | {"Seq. acc." : accuracy} | {"AP" : AP} | {"MCC" : MCC} | {"AUC" : AUC} | {"ideal_threshold" : ideal_threshold}
 
     #Save the performance metrics to a text file
-    with open(f'performance_metrics_{filename}.txt', 'w') as f:
-      print(dictionary, file=f)
+    #with open(f'performance_metrics_{filename}.txt', 'w') as f:
+    #  print(dictionary, file=f)
 
     #Return joint dictionary
     return dictionary
@@ -111,7 +112,7 @@ def preprocess_logits_for_metrics(logits, labels):
   return logits
 
 
-def compute_metrics_test(eval_pred, file_name, decision_threshold):
+def compute_metrics_test(eval_pred, filename, decision_threshold):
     """
     Same as above "compute_metrics" function, but without decision boundary optimization.
     """
@@ -136,11 +137,11 @@ def compute_metrics_test(eval_pred, file_name, decision_threshold):
     fig, ax = plt.subplots(dpi = 300, figsize = (5,3))
     ax.set_ylabel("Precision")
     ax.set_xlabel("Recall")
-    ax.set_title("Precision-Recall Curve at final epoch: splicebert", fontsize = 12)
+    ax.set_title(f"Precision-Recall Curve test set: {filename}", fontsize = 12)
     ax.plot(recall, precision)
-    fig.savefig(file_name + ".png")
+    fig.savefig(filename + ".png")
 
-    np.savetxt("pr_curve.txt", np.vstack((precision,recall)).T)
+    np.savetxt(f"pr_curve_test_{filename}.txt", np.vstack((precision,recall)).T)
 
     #Calculate accuracy
     categorical_predictions = np.where(predictions>decision_threshold, 1, 0)
@@ -149,15 +150,15 @@ def compute_metrics_test(eval_pred, file_name, decision_threshold):
     categorical_predictions_flat = categorical_predictions.reshape((-1,))
     categorical_predictions_flat = categorical_predictions_flat[labels_flat!=-100]
 
-    F1 = F1_calc.compute(predictions=categorical_predictions_flat, references=labels_flat_cleaned)
+    F1 = f1_score(categorical_predictions_flat, labels_flat_cleaned)
     MCC = matthews_corrcoef(labels_flat_cleaned, categorical_predictions_flat)
     AUC = roc_auc_score(labels_flat_cleaned, categorical_predictions_flat)
 
     #Combine metrics
-    dictionary = F1 | {"Seq. Acc" : accuracy} | {"AP" : AP} | {"MCC" : MCC} | {"AUC" : AUC}
+    dictionary = {"F1" : F1} | {"Seq. Acc" : accuracy} | {"AP" : AP} | {"MCC" : MCC} | {"AUC" : AUC}
 
     #Save the performance metrics to a text file
-    with open(file_name + ".txt", 'w') as f:
+    with open(filename + ".txt", 'w') as f:
       print(dictionary, file=f)
 
     #Return joint dictionary
