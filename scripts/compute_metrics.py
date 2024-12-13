@@ -65,8 +65,8 @@ def compute_metrics(eval_pred, filename):
     MCC = matthews_corrcoef(labels_flat_cleaned, categorical_predictions_flat)
     AUC = roc_auc_score(labels_flat_cleaned, categorical_predictions_flat)
 
-    #Combine metrics
-    dictionary = {"F1" : F1} | {"Seq. acc." : accuracy} | {"AP" : AP} | {"MCC" : MCC} | {"AUC" : AUC} | {"ideal_threshold" : ideal_threshold}
+    #Combine metrics        
+    dictionary = {"F1": F1, "seq_accuracy": accuracy, "AP": AP, "MCC": MCC, "AUC": AUC, "ideal_threshold": ideal_threshold}
 
     #Save the performance metrics to a text file
     #with open(f'performance_metrics_{filename}.txt', 'w') as f:
