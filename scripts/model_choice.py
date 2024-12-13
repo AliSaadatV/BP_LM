@@ -19,13 +19,13 @@ def set_multimolecule_model(model_name):
     Initializes and returns the model, tokenizer, and maximum input size based on the provided model name.
 
     Parameters:
-    - model_name (str): The name of the model to loaded.
+    - model_name (str): The name of the model to be loaded.
 
     Returns:
     - tuple: a tuple containing the loaded and configured model, tokenizer, and the maximum input size.
     """
 
-    # Mapping of model names to their respective classes and max input sizes
+    # Mapping of model names to their respective token prediction models and max input sizes
     model_mapping = {
         "rnafm": {
             "model": RnaFmForTokenPrediction,
