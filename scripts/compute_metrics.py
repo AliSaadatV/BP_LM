@@ -10,6 +10,7 @@ from sklearn.metrics import (average_precision_score,
                              f1_score)
 from scipy.special import softmax
 
+precision_recall_data = []
 
 def compute_metrics(eval_pred, filename):
     """
@@ -42,20 +43,12 @@ def compute_metrics(eval_pred, filename):
 
     # Plot precision curves
     precision, recall, thresholds = precision_recall_curve(labels_flat_cleaned, predictions_flat)
-    fig, ax = plt.subplots(dpi = 300, figsize = (5,3))
-    ax.set_ylabel("Precision")
-    ax.set_xlabel("Recall")
-    ax.set_title(f"Precision-Recall Curve: {filename}", fontsize = 12)
-    ax.plot(recall, precision)
-    #fig.savefig(f"Precision-Recall Curve at final epoch: {filename}.png")
 
-    #np.savetxt(f'pr_curve_{filename}.txt', np.vstack((precision,recall)).T)
-
-    #Compute ideal boundary and optimized F1
+    # Compute ideal boundary and optimized F1
     ideal_threshold = thresholds[np.nanargmax(2 * (precision * recall) / (precision + recall))]
     F1 = np.nanmax(2 * (precision * recall) / (precision + recall))
 
-    #Calculate accuracy
+    # Calculate accuracy
     categorical_predictions = np.where(predictions>ideal_threshold, 1, 0)
     accuracy = compute_accuracy(labels, categorical_predictions)
 
@@ -65,16 +58,17 @@ def compute_metrics(eval_pred, filename):
     MCC = matthews_corrcoef(labels_flat_cleaned, categorical_predictions_flat)
     AUC = roc_auc_score(labels_flat_cleaned, categorical_predictions_flat)
 
-    #Combine metrics        
-    dictionary = {"F1": F1, "seq_accuracy": accuracy, "AP": AP, "MCC": MCC, "AUC": AUC, "ideal_threshold": ideal_threshold}
+    metrics = {
+        "F1": F1,
+        "seq_accuracy": accuracy,
+        "AP": AP,
+        "MCC": MCC,
+        "AUC": AUC,
+        "ideal_threshold": ideal_threshold}
 
-    #Save the performance metrics to a text file
-    #with open(f'performance_metrics_{filename}.txt', 'w') as f:
-    #  print(dictionary, file=f)
+    precision_recall_data.append(list(zip(precision, recall)))
 
-    #Return joint dictionary
-    return dictionary
-
+    return metrics
 
 def compute_accuracy(labels, categorical_predictions):
     sequence_matches = 0
@@ -96,43 +90,27 @@ def compute_accuracy(labels, categorical_predictions):
     sequence_accuracy = sequence_matches / total_sequences if total_sequences > 0 else 0
     return sequence_accuracy
 
-
-# Hidden states of all test samples is order 260GB
-# Get rid of these during evaluation to not run out of RAM
-def preprocess_logits_for_metrics(logits, labels):
-  """
-  The metric function needs the logits of all samples in the test set loaded in RAM
-  simultaneously to evaluate performance. Model output contains both logits and
-  Hidden states, hidden states take up much more space.
-
-  We inject this function to the training loop to delete hidden states while
-  evaluating the test samples. This frees tons of memory.
-  """
-  logits = logits[0] # Discard hidden states
-  return logits
-
-
 def compute_metrics_test(eval_pred, filename, decision_threshold):
     """
     Same as above "compute_metrics" function, but without decision boundary optimization.
     """
     logits, labels = eval_pred
 
-    #Find predictions from logits
+    # Find predictions from logits
     predictions = softmax(logits, axis=2)[:,:,1] #probability of positive label
 
-    #Reshape predictions and labels into long strings to compute metrics per token
+    # Reshape predictions and labels into long strings to compute metrics per token
     predictions_flat = predictions.reshape((-1,))
     labels_flat = labels.reshape((-1,))
 
-    #Remove all the padded ones
+    # Remove all the padded ones
     predictions_flat = predictions_flat[labels_flat!=-100]
     labels_flat_cleaned = labels_flat[labels_flat!=-100]
 
-    #compute average precision
+    # Compute average precision
     AP = average_precision_score(labels_flat_cleaned, predictions_flat)
 
-    #Plot precision curves
+    # Plot precision curves
     precision, recall, thresholds = precision_recall_curve(labels_flat_cleaned, predictions_flat)
     fig, ax = plt.subplots(dpi = 300, figsize = (5,3))
     ax.set_ylabel("Precision")
@@ -143,7 +121,7 @@ def compute_metrics_test(eval_pred, filename, decision_threshold):
 
     np.savetxt(f"pr_curve_test_{filename}.txt", np.vstack((precision,recall)).T)
 
-    #Calculate accuracy
+    # Calculate accuracy
     categorical_predictions = np.where(predictions>decision_threshold, 1, 0)
     accuracy = compute_accuracy(labels, categorical_predictions)
 
@@ -154,12 +132,12 @@ def compute_metrics_test(eval_pred, filename, decision_threshold):
     MCC = matthews_corrcoef(labels_flat_cleaned, categorical_predictions_flat)
     AUC = roc_auc_score(labels_flat_cleaned, categorical_predictions_flat)
 
-    #Combine metrics
-    dictionary = {"F1" : F1} | {"Seq. Acc" : accuracy} | {"AP" : AP} | {"MCC" : MCC} | {"AUC" : AUC}
+    # Combine metrics
+    dictionary = {"F1": F1, "seq_accuracy": accuracy, "AP": AP, "MCC": MCC, "AUC": AUC, "ideal_threshold": ideal_threshold}
 
-    #Save the performance metrics to a text file
+    # Save the performance metrics to a text file
     with open(filename + ".txt", 'w') as f:
       print(dictionary, file=f)
 
-    #Return joint dictionary
+    # Return joint dictionary
     return dictionary
