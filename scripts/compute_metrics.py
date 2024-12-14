@@ -89,7 +89,7 @@ def compute_accuracy(labels, categorical_predictions):
     sequence_accuracy = sequence_matches / total_sequences if total_sequences > 0 else 0
     return sequence_accuracy
 
-def compute_metrics_test(eval_pred, filename, decision_threshold):
+def compute_metrics_test(eval_pred, model_name, decision_threshold):
     """
     Same as above "compute_metrics" function, but without decision boundary optimization.
     """
@@ -111,14 +111,14 @@ def compute_metrics_test(eval_pred, filename, decision_threshold):
 
     # Plot precision curves
     precision, recall, thresholds = precision_recall_curve(labels_flat_cleaned, predictions_flat)
-    fig, ax = plt.subplots(dpi = 300, figsize = (5,3))
-    ax.set_ylabel("Precision")
-    ax.set_xlabel("Recall")
-    ax.set_title(f"Precision-Recall Curve test set: {filename}", fontsize = 12)
-    ax.plot(recall, precision)
-    fig.savefig(filename + ".png")
+    #fig, ax = plt.subplots(dpi = 300, figsize = (5,3))
+    #ax.set_ylabel("Precision")
+    #ax.set_xlabel("Recall")
+    #ax.set_title(f"Precision-Recall Curve test set: {filename}", fontsize = 12)
+    #ax.plot(recall, precision)
+    #fig.savefig(filename + ".png")
 
-    np.savetxt(f"pr_curve_test_{filename}.txt", np.vstack((precision,recall)).T)
+    np.savetxt(f"pr_curve_test_{model_name}.txt", np.vstack((precision,recall)).T)
 
     # Calculate accuracy
     categorical_predictions = np.where(predictions>decision_threshold, 1, 0)
@@ -132,11 +132,11 @@ def compute_metrics_test(eval_pred, filename, decision_threshold):
     AUC = roc_auc_score(labels_flat_cleaned, categorical_predictions_flat)
 
     # Combine metrics
-    dictionary = {"F1": F1, "seq_accuracy": accuracy, "AP": AP, "MCC": MCC, "AUC": AUC, "ideal_threshold": ideal_threshold}
+    dictionary = {"F1": F1, "seq_accuracy": accuracy, "AP": AP, "MCC": MCC, "AUC": AUC}
 
     # Save the performance metrics to a text file
-    with open(filename + ".txt", 'w') as f:
-      print(dictionary, file=f)
+    #with open(model_name + ".txt", 'w') as f:
+    #  print(dictionary, file=f)
 
     # Return joint dictionary
     return dictionary

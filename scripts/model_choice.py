@@ -14,7 +14,7 @@ from multimolecule import (
     RnaBertConfig
 )
 
-def set_multimolecule_model(model_name):
+def set_multimolecule_model(model_name, for_testing = False):
     """
     Initializes and returns the model, tokenizer, and maximum input size based on the provided model name.
 
@@ -66,9 +66,22 @@ def set_multimolecule_model(model_name):
     config.problem_type = "single_label_classification"
     config.num_labels = 2
 
-    #Model and tokenizer definition
-    model = model_mapping[model_name]["model"].from_pretrained(f'multimolecule/{model_name}', config=config)
-    tokenizer = RnaTokenizer.from_pretrained(f'multimolecule/{model_name}')
     max_input_size = model_mapping[model_name]["max_input_size"]
 
-    return model, tokenizer, max_input_size
+    #Model and tokenizer definition
+    if for_testing:
+        loc_name = f"multimolecule-{model_name}-finetuned-secondary-structure/best_model"
+        model = model_mapping[model_name]["model"].from_pretrained(loc_name, config=config)
+        tokenizer = RnaTokenizer.from_pretrained(loc_name)
+        
+        import pandas as pd
+        df = pd.read_csv(f"multimolecule-{model_name}-finetuned-secondary-structure/eval_metrics.csv")
+        best_threshold = df["eval_ideal_threshold"].iloc[-1]
+        
+        return model, tokenizer, max_input_size, best_threshold
+        
+    else:
+        loc_name = f'multimolecule/{model_name}'
+        model = model_mapping[model_name]["model"].from_pretrained(loc_name, config=config)
+        tokenizer = RnaTokenizer.from_pretrained(loc_name)
+        return model, tokenizer, max_input_size
