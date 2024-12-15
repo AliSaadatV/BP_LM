@@ -10,6 +10,8 @@ from sklearn.metrics import (average_precision_score,
                              f1_score)
 from scipy.special import softmax
 
+precision_recall_data = []
+
 def compute_metrics(eval_pred, model_name, training_mode=True, decision_threshold=None):
     """
     Evaluate a range of classification metrics for sequence and token-level predictions.
