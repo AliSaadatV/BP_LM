@@ -54,9 +54,9 @@ def create_dataset(df, tokenizer, model, max_model_input_size, seed, sample_n_da
     val_seqs, val_labels = extract_intron_seq_and_labels(val_df, max_model_input_size, truncate=True)
 
     # Tokenize the sequences
-    train_ids = tokenizer(train_seqs, padding_side = 'left')
-    test_ids = tokenizer(test_seqs, padding_side = 'left')
-    val_ids = tokenizer(val_seqs, padding_side = 'left')
+    train_ids = tokenizer(train_seqs, padding = 'max_length', truncation = True, padding_side = 'left', max_length = max_model_input_size, return_tensors = 'pt')
+    test_ids = tokenizer(test_seqs, padding = 'max_length', truncation = True, padding_side = 'left', max_length = max_model_input_size, return_tensors = 'pt')
+    val_ids = tokenizer(val_seqs, padding = 'max_length', truncation = True, padding_side = 'left', max_length = max_model_input_size, return_tensors = 'pt')
 
     # Build the dataset structure that will be passed for training
     train_dataset = Dataset.from_dict(train_ids)
