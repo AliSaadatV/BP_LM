@@ -2,6 +2,40 @@ from datasets import Dataset
 from .data_preprocessing import *
 
 def create_dataset(df, tokenizer, model, max_model_input_size, seed, sample_n_datapoints=None, truncate=True, shuffle=True):
+    """
+    Creates tokenized datasets for training, validation, and testing a model. 
+
+    This function:
+    1. Calculates branch point positions within intron sequences.
+    2. Removes sequences that exceed the model's maximum input size.
+    3. Splits the data into train, validation, and test sets based on predefined chromosome groups.
+    4. Extracts intron sequences and their corresponding labels for BP prediction.
+    5. Tokenizes the sequences using the provided tokenizer.
+    6. Constructs dataset objects for model training.
+
+    Args:
+        df (pd.DataFrame): input dataframe containing the intron data.
+        tokenizer: tokenizer used to convert sequences into model-compatible input.
+        model: the model to be trained.
+        max_model_input_size (int): maximum token length allowed for the model input.
+        seed (int): random seed for reproducibility when sampling or shuffling.
+        sample_n_datapoints (int, optional): number of datapoints to randomly sample. Defaults to None, which represents the entire dataset.
+        truncate (bool, optional): whether to truncate sequences to fit `max_model_input_size`. Defaults to True.
+        shuffle (bool, optional): whether to shuffle data splits. Defaults to True.
+
+    Returns:
+        tuple: three HuggingFace Dataset objects corresponding to the train, validation, and test sets that will be used to train the model.
+
+    Example:
+        train_dataset, val_dataset, test_dataset = create_dataset(
+            df=dataframe, 
+            tokenizer=my_tokenizer, 
+            model=my_model, 
+            max_model_input_size=512, 
+            seed=42
+        )
+    """
+
     if sample_n_datapoints:
         df = df.sample(n = sample_n_datapoints, random_state=seed)
     

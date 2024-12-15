@@ -1,3 +1,12 @@
+"""
+This file provides utility functions for initializing and configuring RNA-based token prediction models 
+from the multimolecule library to be used for fine-tuning. The file also allows easy setting up of models 
+for testing or general usage, including tokenizer configuration and retrieval of maximum input sizes.
+
+Functions:
+- set_multimolecule_model: Loads a model and tokenizer based on the model name and configuration.
+"""
+
 from multimolecule import (
     RnaTokenizer,
     RnaFmForTokenPrediction,

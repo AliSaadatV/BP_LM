@@ -1,5 +1,4 @@
 # Helper file to do some data preprocessing and preperation for training
-from datasets import Dataset
 
 # Create a split based on chromosome types
 TRAIN_CHRS = ["chr1", "chr2", "chr3", "chr4",
@@ -14,21 +13,18 @@ TEST_CHRS = ["chr8", "chr11"]
 
 def split_train_test_on_chr(df, shuffle=False, seed=None):
     """
-    Creates a train/val/test split specified by the chromosome types.
+    Splits the input dataframe into train, validation, and test sets based on predefined chromosome groups.
     Note: Should run 'extract_intron_seq_and_labels on each dataframe after this method.
 
     Args:
-        df: a dataframe of the data
-        train_chr [str]: List of chromosomes to use for training
-        val_chr [str]: List of chromosomes to use for validation
-        test_chr [str]: List of chromosomes to use for testing
+        df (pd.DataFrame): input dataframe containing the data.
+        shuffle (bool, optional): whether to shuffle the resulting splits. Defaults to False.
+        seed (int, optional): random seed for shuffling. Defaults to None.
 
     Returns:
-        train_df:
-        val_df:
-        test_df:
-
+        tuple: Three dataframes (train_df, val_df, test_df) corresponding to the train, validation, and test splits.
     """
+
     # Check that there is no overlap in chromosomes between each set
     assert not (set(TRAIN_CHRS) & set(VAL_CHRS)), f"Overlap found between train and val sets: {set(train_chrs) & set(val_chrs)}"
     assert not (set(TRAIN_CHRS) & set(TEST_CHRS)), f"Overlap found between train and test sets: {set(train_chrs) & set(test_chrs)}"
@@ -61,7 +57,6 @@ def split_train_test_on_chr(df, shuffle=False, seed=None):
 
     return train_df, val_df, test_df
 
-
 def extract_intron_seq_and_labels(df, max_model_input_size=0, truncate=True):
     """
     Extract the intron sequence (IVS_SEQ) and the BP location (BP_WITHIN_STRAND).
@@ -69,9 +64,9 @@ def extract_intron_seq_and_labels(df, max_model_input_size=0, truncate=True):
     information is removed. Also truncates intron strands and its corresponding labels
 
     Args:
-        df: a dataframe of the data (either train, val, or test)
-        max_model_input_size: the maximum token size the model can take
-        truncate: whether to truncate introns/labels
+        df (pd.DataFrame): a dataframe of the data (either train, val, or test)
+        max_model_input_size (int): maximum sequence length for the model input. Defaults to 0.
+        truncate (bool): qhether to truncate intron sequences and labels to fit the model input size. Defaults to True.
 
     Returns:
         ivs_seq_list: list of the intron sequences
@@ -95,17 +90,18 @@ def extract_intron_seq_and_labels(df, max_model_input_size=0, truncate=True):
     # Result as two lists
     return ivs_seq_list, labels
 
-
 def truncate_strands(intron_list, labels, max_length):
     """
-    Truncate intron sequence and corresponding labels from the right such that
-    the intron sequence fits within the model. We are truncating from the right
-    since all branch points are located on the right side.
+    Truncates intron sequences and corresponding labels to a specified maximum length.
+    Truncating is done from the right since all branch points are located on the right side.
 
     Args:
-        intron_list:
-        labels:
-        max_length: max token length of model (model must have token sizes of 1 nucleotide)
+        intron_list (list): List of intron sequences.
+        labels (list): Corresponding labels for each intron sequence.
+        max_length (int): Maximum allowed sequence length.
+
+    Returns:
+        tuple: Truncated intron sequences and labels.
     """
     truncated_introns = []
     truncated_labels = []

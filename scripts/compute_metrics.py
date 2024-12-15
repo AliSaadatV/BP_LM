@@ -1,4 +1,5 @@
-# Notebook for computing metrics
+# Notebook for computing metrics during training and testing.
+
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import (average_precision_score,
@@ -9,22 +10,42 @@ from sklearn.metrics import (average_precision_score,
                              f1_score)
 from scipy.special import softmax
 
-precision_recall_data = []
-
-def compute_metrics(eval_pred, filename):
+def compute_metrics(eval_pred, model_name, training_mode=True, decision_threshold=None):
     """
-    Function to simultaneously evaluate accuracy, F1 and average precision (AP)
+    Evaluate a range of classification metrics for sequence and token-level predictions.
 
-    The function does the evaluation per label for accuracy, and per token otherwise.
+    This function computes Accuracy, F1 Score, Average Precision (AP), Matthews Correlation Coefficient (MCC), 
+    and Area Under the Receiver Operating Characteristic Curve (ROC AUC). 
 
-    average precision is the most interesting as it accounts for the fact that the
-    ideal decision boundary may be something non trivial.
+    - Accuracy is calculated at the sequence level.
+    - F1, MCC, AP, and ROC AUC are calculated at the token (nucleotide) level.
 
-    F1 and accuracy are reported at the decision boundary which maximises the F1
+    Average Precision is interested as it considers non-trivial decision boundaries. During training, 
+    the decision threshold is dynamically computed to maximize the F1 score. For evaluation, the decision threshold 
+    must be provided.
+
+    Args:
+        eval_pred (tuple): A tuple (logits, labels) where logits are the raw model outputs 
+             and labels are the true values. Padding tokens in labels should be set to -100.
+        model_name (str): A name or identifier for the model. Used for saving output files during evaluation.
+        training_mode (bool): If True, script will compute the optimal decision threshold to maximize F1 score. 
+            If False, a fixed decision threshold must be provided.
+        decision_threshold (float, optional): The decision threshold to classify predictions as positive (1) or negative (0). 
+            Required if training_mode is False. 
+
+    Returns:
+        dict: A dictionary containing the calculated metrics:
+            - "F1": F1 score at the token level.
+            - "seq_accuracy": Accuracy at the sequence level.
+            - "AP": Average Precision score.
+            - "MCC": Matthews Correlation Coefficient.
+            - "AUC": Area Under the ROC Curve.
+            - "ideal_threshold" (optional): The decision threshold that maximized F1 during training. Will only be returned in training mode.
     """
-    raw_predictions, labels = eval_pred
+    if not training_mode:
+        assert decision_threshold is not None, "decision_threshold must not be None when training_mode is False"
 
-    logits = raw_predictions # Discard hidden states and keep logits
+    logits, labels = eval_pred
 
     # Find predictions from logits
     predictions = softmax(logits, axis=2)[:,:,1] # Probability of positive label
@@ -43,33 +64,47 @@ def compute_metrics(eval_pred, filename):
     # Plot precision curves
     precision, recall, thresholds = precision_recall_curve(labels_flat_cleaned, predictions_flat)
 
-    # Compute ideal boundary and optimized F1
-    ideal_threshold = thresholds[np.nanargmax(2 * (precision * recall) / (precision + recall))]
-    F1 = np.nanmax(2 * (precision * recall) / (precision + recall))
+    if training_mode: 
+        # Decision threshold not passed in, compute the ideal boundary and optimized F1
+        decision_threshold = thresholds[np.nanargmax(2 * (precision * recall) / (precision + recall))]
+    else: 
+        # Precision-recall text file used to create plot in paper
+        # Don't plot this during training
+        np.savetxt(f"pr_curve_test_{model_name}.txt", np.vstack((precision,recall)).T)
 
     # Calculate accuracy
-    categorical_predictions = np.where(predictions>ideal_threshold, 1, 0)
+    categorical_predictions = np.where(predictions>decision_threshold, 1, 0)
     accuracy = compute_accuracy(labels, categorical_predictions)
 
     categorical_predictions_flat = categorical_predictions.reshape((-1,))
     categorical_predictions_flat = categorical_predictions_flat[labels_flat!=-100]
 
+    F1 = f1_score(categorical_predictions_flat, labels_flat_cleaned)
     MCC = matthews_corrcoef(labels_flat_cleaned, categorical_predictions_flat)
-    AUC = roc_auc_score(labels_flat_cleaned, categorical_predictions_flat)
+    AUC = roc_auc_score(labels_flat_cleaned, predictions_flat)
 
-    metrics = {
-        "F1": F1,
-        "seq_accuracy": accuracy,
-        "AP": AP,
-        "MCC": MCC,
-        "AUC": AUC,
-        "ideal_threshold": ideal_threshold}
+    # Combine metrics
+    metrics = {"F1": F1, "seq_accuracy": accuracy, "AP": AP, "MCC": MCC, "AUC": AUC}
 
-    precision_recall_data.append(list(zip(precision, recall)))
+    if training_mode:
+        precision_recall_data.append(list(zip(precision, recall)))
+        metrics['ideal_threshold'] = decision_threshold
 
     return metrics
 
 def compute_accuracy(labels, categorical_predictions):
+    """
+    Compute sequence-level accuracy by comparing predicted and true sequences.
+
+    Args:
+        labels: Ground-truth labels
+            Padding tokens should be set to -100.
+        categorical_predictions: Binary predictions
+
+    Returns:
+        float: Sequence-level accuracy, calculated as the ratio of correctly predicted sequences 
+        to the total number of sequences.
+    """
     sequence_matches = 0
     total_sequences = 0
 
@@ -88,55 +123,3 @@ def compute_accuracy(labels, categorical_predictions):
     # Sequence-level accuracy
     sequence_accuracy = sequence_matches / total_sequences if total_sequences > 0 else 0
     return sequence_accuracy
-
-def compute_metrics_test(eval_pred, model_name, decision_threshold):
-    """
-    Same as above "compute_metrics" function, but without decision boundary optimization.
-    """
-    logits, labels = eval_pred
-
-    # Find predictions from logits
-    predictions = softmax(logits, axis=2)[:,:,1] #probability of positive label
-
-    # Reshape predictions and labels into long strings to compute metrics per token
-    predictions_flat = predictions.reshape((-1,))
-    labels_flat = labels.reshape((-1,))
-
-    # Remove all the padded ones
-    predictions_flat = predictions_flat[labels_flat!=-100]
-    labels_flat_cleaned = labels_flat[labels_flat!=-100]
-
-    # Compute average precision
-    AP = average_precision_score(labels_flat_cleaned, predictions_flat)
-
-    # Plot precision curves
-    precision, recall, thresholds = precision_recall_curve(labels_flat_cleaned, predictions_flat)
-    #fig, ax = plt.subplots(dpi = 300, figsize = (5,3))
-    #ax.set_ylabel("Precision")
-    #ax.set_xlabel("Recall")
-    #ax.set_title(f"Precision-Recall Curve test set: {filename}", fontsize = 12)
-    #ax.plot(recall, precision)
-    #fig.savefig(filename + ".png")
-
-    np.savetxt(f"pr_curve_test_{model_name}.txt", np.vstack((precision,recall)).T)
-
-    # Calculate accuracy
-    categorical_predictions = np.where(predictions>decision_threshold, 1, 0)
-    accuracy = compute_accuracy(labels, categorical_predictions)
-
-    categorical_predictions_flat = categorical_predictions.reshape((-1,))
-    categorical_predictions_flat = categorical_predictions_flat[labels_flat!=-100]
-
-    F1 = f1_score(categorical_predictions_flat, labels_flat_cleaned)
-    MCC = matthews_corrcoef(labels_flat_cleaned, categorical_predictions_flat)
-    AUC = roc_auc_score(labels_flat_cleaned, categorical_predictions_flat)
-
-    # Combine metrics
-    dictionary = {"F1": F1, "seq_accuracy": accuracy, "AP": AP, "MCC": MCC, "AUC": AUC}
-
-    # Save the performance metrics to a text file
-    #with open(model_name + ".txt", 'w') as f:
-    #  print(dictionary, file=f)
-
-    # Return joint dictionary
-    return dictionary
