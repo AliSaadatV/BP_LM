@@ -22,6 +22,7 @@ from multimolecule import (
     RnaBertForTokenPrediction,
     RnaBertConfig
 )
+import pandas as pd
 
 def set_multimolecule_model(model_name, for_testing = False):
     """
@@ -77,13 +78,13 @@ def set_multimolecule_model(model_name, for_testing = False):
 
     max_input_size = model_mapping[model_name]["max_input_size"]
 
-    #Model and tokenizer definition
+    # Model and tokenizer definition
     if for_testing:
-        loc_name = f"multimolecule-{model_name}-finetuned-secondary-structure/best_model"
+        loc_name = f"multimolecule-{model_name}-finetuned-secondary-structure/final_model"
         model = model_mapping[model_name]["model"].from_pretrained(loc_name, config=config)
         tokenizer = RnaTokenizer.from_pretrained(loc_name)
         
-        import pandas as pd
+        #Load the ideal threashold
         df = pd.read_csv(f"multimolecule-{model_name}-finetuned-secondary-structure/eval_metrics.csv")
         best_threshold = df["eval_ideal_threshold"].iloc[-1]
         
