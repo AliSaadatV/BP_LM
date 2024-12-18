@@ -53,7 +53,7 @@ def create_dataset(df, tokenizer, model, max_model_input_size, seed, sample_n_da
     test_seqs, test_labels = extract_intron_seq_and_labels(test_df, max_model_input_size, truncate=True)
     val_seqs, val_labels = extract_intron_seq_and_labels(val_df, max_model_input_size, truncate=True)
 
-    # Tokenize the sequences
+    # Tokenize the sequences. For splicebert testing use tokenizer(train_seqs, padding_side = 'left')
     train_ids = tokenizer(train_seqs, padding = 'max_length', truncation = True, padding_side = 'left', max_length = max_model_input_size, return_tensors = 'pt')
     test_ids = tokenizer(test_seqs, padding = 'max_length', truncation = True, padding_side = 'left', max_length = max_model_input_size, return_tensors = 'pt')
     val_ids = tokenizer(val_seqs, padding = 'max_length', truncation = True, padding_side = 'left', max_length = max_model_input_size, return_tensors = 'pt')
