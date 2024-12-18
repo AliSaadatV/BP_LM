@@ -21,6 +21,7 @@ It has been split into approximately **80/10/10 train/validation/test** by chrom
 The repository is organized as follows:
 ### Main Code
 - `master_training.ipynb`: The main notebook for fine-tuning MultiMolecule RNA language models. Change the model name and hyperparameters in the first cell and set the dataset path in the second cell.
+- `master_testing.ipynb`: The main notebook to evaluate the various fine-tuned language models on the test set.
 
 ### Scripts
 Located in the `scripts/` folder 
@@ -48,4 +49,4 @@ Contributors (in alphabetical order):
 - Oliver Smedt (EPFL)
 - Timothy Tran (EPFL, University of Washington)
 
-Huge thanks to [Ali Sadaat](https://people.epfl.ch/ali.saadat) who organized this project and was an amazing adivsor for this project.
+We extend our gratitude to [Ali Saadat](https://people.epfl.ch/ali.saadat) (EPFL) for his valuable guidance and support as the advisor for this project. We also thank [Peng Zheng](https://scholar.google.com.sg/citations?user=Ic2nqDsAAAAJ&hl=en) (Rockefeller University), the original creator of the BPHunter dataset, for his assistance in creating the modified subset of the dataset that was used to fine-tune the models.
